@@ -157,7 +157,8 @@ def main():
         # "nuxtjs/.knowledge", 
         # "ionicframework/.knowledge",
         # "laravel/.knowledge",
-        "filamentphp/.knowledge"
+        # "filamentphp/.knowledge"
+        "livewire/.knowledge"
     ]  # TODO: Make this dynamic or configurable
     GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
