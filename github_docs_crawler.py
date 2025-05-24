@@ -4,35 +4,41 @@ import requests
 from pathlib import Path
 import time
 
-def get_api_url_from_knowledge_file(knowledge_file_path_str: str) -> str | None:
-    """Reads the API URL from the first line of a .knowledge file.
+def get_api_urls_from_knowledge_file(knowledge_file_path_str: str) -> list[str]:
+    """Reads API URLs from a .knowledge file.
 
     Args:
         knowledge_file_path_str: The path to the .knowledge file.
 
     Returns:
-        The API URL as a string, or None if an error occurs.
+        A list of API URLs. Returns an empty list if the file is not found,
+        cannot be read, or contains no valid URLs.
     """
+    urls = []
     try:
         knowledge_file_path = Path(knowledge_file_path_str)
         if not knowledge_file_path.is_file():
             print(f"Error: Knowledge file not found: {knowledge_file_path_str}")
-            return None
+            return []
         
         with open(knowledge_file_path, 'r', encoding='utf-8') as f:
-            url = f.readline().strip()
+            for line_num, line in enumerate(f, 1):
+                url = line.strip()
+                if not url or url.startswith('#'): # Skip empty lines and comments
+                    continue
+                
+                if not url.startswith("https://api.github.com/repos/"):
+                    print(f"Warning: The URL on line {line_num} in {knowledge_file_path_str} does not look like a GitHub API contents URL: {url}")
+                    # We'll still add it, but the user should be aware.
+                urls.append(url)
         
-        if not url:
-            print(f"Error: Knowledge file is empty or first line is blank: {knowledge_file_path_str}")
-            return None
-        if not url.startswith("https://api.github.com/repos/"):
-            print(f"Warning: The URL in {knowledge_file_path_str} does not look like a GitHub API contents URL: {url}")
-            # We'll still return it, but the user should be aware.
-
-        return url
+        if not urls:
+            print(f"Warning: No valid URLs found in {knowledge_file_path_str}")
+            
+        return urls
     except Exception as e:
         print(f"Error reading knowledge file {knowledge_file_path_str}: {e}")
-        return None
+        return []
 
 MAX_RETRIES = 3
 RETRY_DELAY_SECONDS = 5 # Initial delay, can be increased
@@ -182,10 +188,10 @@ def main():
 
     for knowledge_file_path_str in KNOWLEDGE_FILES:
         print(f"\nProcessing knowledge file: {knowledge_file_path_str}")
-        start_api_url = get_api_url_from_knowledge_file(knowledge_file_path_str)
+        start_api_urls = get_api_urls_from_knowledge_file(knowledge_file_path_str)
 
-        if not start_api_url:
-            print(f"Skipping {knowledge_file_path_str} due to previous errors.")
+        if not start_api_urls:
+            print(f"Skipping {knowledge_file_path_str} due to no valid URLs found or error reading file.")
             continue
 
         # Derive doc_name from the parent directory of the .knowledge file
@@ -204,16 +210,20 @@ def main():
         output_md_path = output_dir / "docs.md"
 
         print(f"Processing documentation for: '{doc_name}'")
-        print(f"GitHub API URL: {start_api_url}")
+        print(f"Found {len(start_api_urls)} GitHub API URL(s):")
+        for i, url in enumerate(start_api_urls):
+            print(f"  [{i+1}] {url}")
         print(f"Output will be saved to: {output_md_path.resolve()}")
 
         try:
             with open(output_md_path, 'w', encoding='utf-8') as output_file_handle:
                 output_file_handle.write(f"# Combined Documentation for {doc_name}\n")
                 output_file_handle.write(f"<!-- Source .knowledge file: {knowledge_file_path_str} -->\n")
-                output_file_handle.write(f"<!-- GitHub API Root: {start_api_url} -->\n\n")
-                crawl_github_docs(start_api_url, output_file_handle, headers)
-                # This print is temporary until crawl_github_docs is implemented
+                output_file_handle.write(f"<!-- GitHub API Roots: {', '.join(start_api_urls)} -->\n\n")
+                for start_api_url in start_api_urls:
+                    print(f"\n--- Starting crawl for API URL: {start_api_url} ---")
+                    crawl_github_docs(start_api_url, output_file_handle, headers)
+                    print(f"--- Finished crawl for API URL: {start_api_url} ---")
 
             print(f"Successfully processed {doc_name}. Output at {output_md_path.resolve()}")
         except IOError as e:
