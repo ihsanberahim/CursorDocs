@@ -1,6 +1,6 @@
 # Combined Documentation for nuxtjs
 <!-- Source .knowledge file: nuxtjs/.knowledge -->
-<!-- GitHub API Root: https://api.github.com/repos/nuxt/nuxt/contents/docs -->
+<!-- GitHub API Roots: https://api.github.com/repos/nuxt/nuxt/contents/docs -->
 
 
 
@@ -122,7 +122,7 @@ Or follow the steps below to set up a new Nuxt project on your computer.
 <!-- markdownlint-disable-next-line MD001 -->
 #### Prerequisites
 
-- **Node.js** - [`18.x`](https://nodejs.org/en) or newer (but we recommend the [active LTS release](https://github.com/nodejs/release#release-schedule))
+- **Node.js** - [`20.x`](https://nodejs.org/en) or newer (but we recommend the [active LTS release](https://github.com/nodejs/release#release-schedule))
 - **Text editor** - There is no IDE requirement, but we recommend [Visual Studio Code](https://code.visualstudio.com/) with the [official Vue extension](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (previously known as Volar) or [WebStorm](https://www.jetbrains.com/webstorm/), which, along with [other JetBrains IDEs](https://www.jetbrains.com/ides/), offers great Nuxt support right out-of-the-box.
 - **Terminal** - In order to run Nuxt commands
 
@@ -397,8 +397,8 @@ Name                                         | Config File             | How To 
 
 If you need to pass options to `@vitejs/plugin-vue` or `@vitejs/plugin-vue-jsx`, you can do this in your `nuxt.config` file.
 
-- `vite.vue` for `@vitejs/plugin-vue`. Check available options [here](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue).
-- `vite.vueJsx` for `@vitejs/plugin-vue-jsx`. Check available options [here](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx).
+- `vite.vue` for `@vitejs/plugin-vue`. Check [available options](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue).
+- `vite.vueJsx` for `@vitejs/plugin-vue-jsx`. Check [available options](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx).
 
 ```ts twoslash [nuxt.config.ts]
 export default defineNuxtConfig({
@@ -834,7 +834,7 @@ useHead({
 })
 ```
 
-Nuxt uses `unhead` under the hood, and you can refer to its full documentation [here](https://unhead.unjs.io).
+Nuxt uses `unhead` under the hood, and you can refer to [its full documentation](https://unhead.unjs.io).
 
 ### Modifying The Rendered Head With A Nitro Plugin
 
@@ -1358,7 +1358,7 @@ There are three kinds of route middleware:
 
 1. Anonymous (or inline) route middleware, which are defined directly in the pages where they are used.
 2. Named route middleware, which are placed in the [`middleware/`](/docs/guide/directory-structure/middleware) directory and will be automatically loaded via asynchronous import when used on a page. (**Note**: The route middleware name is normalized to kebab-case, so `someMiddleware` becomes `some-middleware`.)
-3. Global route middleware, which are placed in the [`middleware/` directory](/docs/guide/directory-structure/middleware) (with a `.global` suffix) and will be automatically run on every route change.
+3. Global route middleware, which are placed in the [`middleware/`](/docs/guide/directory-structure/middleware) directory (with a `.global` suffix) and will be automatically run on every route change.
 
 Example of an `auth` middleware protecting the `/dashboard` page:
 
@@ -4367,7 +4367,7 @@ mockNuxtImport('useStorage', () => {
 ```
 
 ::note
-`mockNuxtImport` can only be used once per mocked import per test file. It is actually a macro that gets transformed to `vi.mock` and `vi.mock` is hoisted, as described [here](https://vitest.dev/api/vi.html#vi-mock).
+`mockNuxtImport` can only be used once per mocked import per test file. It is actually a macro that gets transformed to `vi.mock` and `vi.mock` is hoisted, as described [in the Vitest docs](https://vitest.dev/api/vi.html#vi-mock).
 ::
 
 If you need to mock a Nuxt import and provide different implementations between tests, you can do it by creating and exposing your mocks using [`vi.hoisted`](https://vitest.dev/api/vi.html#vi-hoisted), and then use those mocks in `mockNuxtImport`. You then have access to the mocked imports, and can change the implementation between tests. Be careful to [restore mocks](https://vitest.dev/api/mock.html#mockrestore) before or after each test to undo mock state changes between runs.
@@ -8007,12 +8007,12 @@ export { utils } from './nested/utils.ts'
 export default defineNuxtConfig({
   imports: {
     dirs: [
-      // Scan top-level modules
-      'composables',
-      // ... or scan modules nested one level deep with a specific name and file extension
-      'composables/*/index.{ts,js,mjs,mts}',
-      // ... or scan all modules within given directory
-      'composables/**'
+      // Scan top-level composables
+      '~/composables',
+      // ... or scan composables nested one level deep with a specific name and file extension
+      '~/composables/*/index.{ts,js,mjs,mts}',
+      // ... or scan all composables within given directory
+      '~/composables/**'
     ]
   }
 })
@@ -8897,13 +8897,13 @@ Of course, you are welcome to define metadata for your own use throughout your a
 
 #### `alias`
 
-You can define page aliases. They allow you to access the same page from different paths. It can be either a string or an array of strings as defined [here](https://router.vuejs.org/guide/essentials/redirect-and-alias.html#Alias) on vue-router documentation.
+You can define page aliases. They allow you to access the same page from different paths. It can be either a string or an array of strings as defined [in the vue-router documentation](https://router.vuejs.org/guide/essentials/redirect-and-alias.html#Alias).
 
 #### `keepalive`
 
 Nuxt will automatically wrap your page in [the Vue `<KeepAlive>` component](https://vuejs.org/guide/built-ins/keep-alive.html#keepalive) if you set `keepalive: true` in your `definePageMeta`. This might be useful to do, for example, in a parent route that has dynamic child routes, if you want to preserve page state across route changes.
 
-When your goal is to preserve state for parent routes use this syntax: `<NuxtPage keepalive />`. You can also set props to be passed to `<KeepAlive>` (see a full list [here](https://vuejs.org/api/built-in-components.html#keepalive)).
+When your goal is to preserve state for parent routes use this syntax: `<NuxtPage keepalive />`. You can also set props to be passed to `<KeepAlive>` (see [a full list](https://vuejs.org/api/built-in-components.html#keepalive)).
 
 You can set a default value for this property [in your `nuxt.config`](/docs/api/nuxt-config#keepalive).
 
@@ -8917,7 +8917,7 @@ You can define the layout used to render the route. This can be either false (to
 
 #### `layoutTransition` and `pageTransition`
 
-You can define transition properties for the `<transition>` component that wraps your pages and layouts, or pass `false` to disable the `<transition>` wrapper for that route. You can see a list of options that can be passed [here](https://vuejs.org/api/built-in-components.html#transition) or read [more about how transitions work](https://vuejs.org/guide/built-ins/transition.html#transition).
+You can define transition properties for the `<transition>` component that wraps your pages and layouts, or pass `false` to disable the `<transition>` wrapper for that route. You can see [a list of options that can be passed](https://vuejs.org/api/built-in-components.html#transition) or read [more about how transitions work](https://vuejs.org/guide/built-ins/transition.html#transition).
 
 You can set default values for these properties [in your `nuxt.config`](/docs/api/nuxt-config#layouttransition).
 
@@ -23392,7 +23392,7 @@ export default defineNuxtModule({
 
     addRouteMiddleware({
       name: 'auth',
-      path: resolve('runtime/auth.ts'),
+      path: resolve('runtime/auth'),
       global: true,
     }, { prepend: true })
   },

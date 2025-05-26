@@ -1,6 +1,6 @@
 # Combined Documentation for laravel
 <!-- Source .knowledge file: laravel/.knowledge -->
-<!-- GitHub API Root: https://api.github.com/repos/laravel/docs/contents -->
+<!-- GitHub API Roots: https://api.github.com/repos/laravel/docs/contents -->
 
 
 
@@ -196,9 +196,9 @@ $this->fail('Something went wrong.');
 <a name="closure-commands"></a>
 ### Closure Commands
 
-Closure based commands provide an alternative to defining console commands as classes. In the same way that route closures are an alternative to controllers, think of command closures as an alternative to command classes.
+Closure-based commands provide an alternative to defining console commands as classes. In the same way that route closures are an alternative to controllers, think of command closures as an alternative to command classes.
 
-Even though the `routes/console.php` file does not define HTTP routes, it defines console based entry points (routes) into your application. Within this file, you may define all of your closure based console commands using the `Artisan::command` method. The `command` method accepts two arguments: the [command signature](#defining-input-expectations) and a closure which receives the command's arguments and options:
+Even though the `routes/console.php` file does not define HTTP routes, it defines console based entry points (routes) into your application. Within this file, you may define all of your closure-based console commands using the `Artisan::command` method. The `command` method accepts two arguments: the [command signature](#defining-input-expectations) and a closure which receives the command's arguments and options:
 
 ```php
 Artisan::command('mail:send {user}', function (string $user) {
@@ -225,7 +225,7 @@ Artisan::command('mail:send {user}', function (DripEmailer $drip, string $user) 
 <a name="closure-command-descriptions"></a>
 #### Closure Command Descriptions
 
-When defining a closure based command, you may use the `purpose` method to add a description to the command. This description will be displayed when you run the `php artisan list` or `php artisan help` commands:
+When defining a closure-based command, you may use the `purpose` method to add a description to the command. This description will be displayed when you run the `php artisan list` or `php artisan help` commands:
 
 ```php
 Artisan::command('mail:send {user}', function (string $user) {
@@ -5917,6 +5917,7 @@ The `@use` directive also supports importing PHP functions and constants by pref
 
 ```blade
 @use(function App\Helpers\format_currency)
+@use(const App\Constants\MAX_ATTEMPTS)
 ```
 
 Just like class imports, aliases are supported for functions and constants as well:
@@ -8431,7 +8432,7 @@ useEcho<OrderData>(`orders.${orderId}`, "OrderShipmentStatusUpdated", (e) => {
 });
 ```
 
-The `useEcho` will hook will automatically leave channels when the consuming component is unmounted; however, you may utilize the returned functions to manually stop / start listening to channels programmatically when necessary:
+The `useEcho` hook will automatically leave channels when the consuming component is unmounted; however, you may utilize the returned functions to manually stop / start listening to channels programmatically when necessary:
 
 ```js tab=React
 import { useEcho } from "@laravel/echo-react";
@@ -11754,7 +11755,7 @@ collect(['1', '2'])->containsOneItem();
 
 // false
 
-collect([1, 2, 3])->containsOneItem(fn ($item) => $item === 2);
+collect([1, 2, 3])->containsOneItem(fn (int $item) => $item === 2);
 
 // true
 ```
@@ -11861,12 +11862,10 @@ $collection = collect(['John Doe', 'Jane Doe']);
 $collection->dd();
 
 /*
-    Collection {
-        #items: array:2 [
-            0 => "John Doe"
-            1 => "Jane Doe"
-        ]
-    }
+    array:2 [
+        0 => "John Doe"
+        1 => "Jane Doe"
+    ]
 */
 ```
 
@@ -12035,12 +12034,10 @@ $collection = collect(['John Doe', 'Jane Doe']);
 $collection->dump();
 
 /*
-    Collection {
-        #items: array:2 [
-            0 => "John Doe"
-            1 => "Jane Doe"
-        ]
-    }
+    array:2 [
+        0 => "John Doe"
+        1 => "Jane Doe"
+    ]
 */
 ```
 
@@ -12656,7 +12653,7 @@ The `intersectUsing` method removes any values from the original collection that
 ```php
 $collection = collect(['Desk', 'Sofa', 'Chair']);
 
-$intersect = $collection->intersectUsing(['desk', 'chair', 'bookcase'], function ($a, $b) {
+$intersect = $collection->intersectUsing(['desk', 'chair', 'bookcase'], function (string $a, string $b) {
     return strcasecmp($a, $b);
 });
 
@@ -12704,7 +12701,7 @@ $intersect = $collection->intersectAssocUsing([
     'color' => 'blue',
     'size' => 'M',
     'material' => 'polyester',
-], function ($a, $b) {
+], function (string $a, string $b) {
     return strcasecmp($a, $b);
 });
 
@@ -13274,7 +13271,7 @@ The `percentage` method may be used to quickly determine the percentage of items
 ```php
 $collection = collect([1, 1, 2, 2, 2, 3]);
 
-$percentage = $collection->percentage(fn ($value) => $value === 1);
+$percentage = $collection->percentage(fn (int $value) => $value === 1);
 
 // 33.33
 ```
@@ -13282,7 +13279,7 @@ $percentage = $collection->percentage(fn ($value) => $value === 1);
 By default, the percentage will be rounded to two decimal places. However, you may customize this behavior by providing a second argument to the method:
 
 ```php
-$percentage = $collection->percentage(fn ($value) => $value === 1, precision: 3);
+$percentage = $collection->percentage(fn (int $value) => $value === 1, precision: 3);
 
 // 33.333
 ```
@@ -13422,7 +13419,7 @@ $plucked->all();
 <a name="method-pop"></a>
 #### `pop()` {.collection-method}
 
-The `pop` method removes and returns the last item from the collection:
+The `pop` method removes and returns the last item from the collection. If the collection is empty, `null` will be returned:
 
 ```php
 $collection = collect([1, 2, 3, 4, 5]);
@@ -15483,33 +15480,7 @@ $users->take(20)->all();
 <a name="introduction"></a>
 ## Introduction
 
-> [!WARNING]
-> Laravel's `Concurrency` facade is currently in beta while we gather community feedback.
-
 Sometimes you may need to execute several slow tasks which do not depend on one another. In many cases, significant performance improvements can be realized by executing the tasks concurrently. Laravel's `Concurrency` facade provides a simple, convenient API for executing closures concurrently.
-
-<a name="concurrency-compatibility"></a>
-#### Concurrency Compatibility
-
-If you upgraded to Laravel 11.x from a Laravel 10.x application, you may need to add the `ConcurrencyServiceProvider` to the `providers` array in your application's `config/app.php` configuration file:
-
-```php
-'providers' => ServiceProvider::defaultProviders()->merge([
-    /*
-     * Package Service Providers...
-     */
-    Illuminate\Concurrency\ConcurrencyServiceProvider::class, // [tl! add]
-
-    /*
-     * Application Service Providers...
-     */
-    App\Providers\AppServiceProvider::class,
-    App\Providers\AuthServiceProvider::class,
-    // App\Providers\BroadcastServiceProvider::class,
-    App\Providers\EventServiceProvider::class,
-    App\Providers\RouteServiceProvider::class,
-])->toArray(),
-```
 
 <a name="how-it-works"></a>
 #### How it Works
@@ -16481,7 +16452,7 @@ class PhotoController extends Controller
 }
 ```
 
-In addition to the `Storage` attribute, Laravel offers `Auth`, `Cache`, `Config`, `DB`, `Log`, `RouteParameter`, and [Tag](#tagging) attributes:
+In addition to the `Storage` attribute, Laravel offers `Auth`, `Cache`, `Config`, `Context`, `DB`, `Log`, `RouteParameter`, and [Tag](#tagging) attributes:
 
 ```php
 <?php
@@ -16492,6 +16463,7 @@ use App\Models\Photo;
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Container\Attributes\Cache;
 use Illuminate\Container\Attributes\Config;
+use Illuminate\Container\Attributes\Context;
 use Illuminate\Container\Attributes\DB;
 use Illuminate\Container\Attributes\Log;
 use Illuminate\Container\Attributes\RouteParameter;
@@ -16507,12 +16479,12 @@ class PhotoController extends Controller
         #[Auth('web')] protected Guard $auth,
         #[Cache('redis')] protected Repository $cache,
         #[Config('app.timezone')] protected string $timezone,
+        #[Context('uuid')] protected string $uuid,
         #[DB('mysql')] protected Connection $connection,
         #[Log('daily')] protected LoggerInterface $log,
         #[RouteParameter('photo')] protected Photo $photo,
         #[Tag('reports')] protected iterable $reports,
-    )
-    {
+    ) {
         // ...
     }
 }
@@ -17132,6 +17104,7 @@ Stacks can be useful to capture historical information about a request, such as 
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 
+// In AppServiceProvider.php...
 DB::listen(function ($event) {
     Context::push('queries', [$event->time, $event->sql]);
 });
@@ -17279,8 +17252,10 @@ Context::getHidden(/* ... */);
 Context::pullHidden(/* ... */);
 Context::popHidden(/* ... */);
 Context::onlyHidden(/* ... */);
+Context::exceptHidden(/* ... */);
 Context::allHidden(/* ... */);
 Context::hasHidden(/* ... */);
+Context::missingHidden(/* ... */);
 Context::forgetHidden(/* ... */);
 ```
 
@@ -23013,7 +22988,7 @@ $user = User::factory()
     ->create();
 ```
 
-Of course, you may perform state manipulations on the related models. In addition, you may pass a closure based state transformation if your state change requires access to the parent model:
+Of course, you may perform state manipulations on the related models. In addition, you may pass a closure-based state transformation if your state change requires access to the parent model:
 
 ```php
 $user = User::factory()
@@ -23048,7 +23023,7 @@ $user = User::factory()
     ->create();
 ```
 
-You may provide a closure based state transformation if your state change requires access to the parent model:
+You may provide a closure-based state transformation if your state change requires access to the parent model:
 
 ```php
 $user = User::factory()
@@ -23131,7 +23106,7 @@ $user = User::factory()
     ->create();
 ```
 
-You may provide a closure based state transformation if your state change requires access to the related model:
+You may provide a closure-based state transformation if your state change requires access to the related model:
 
 ```php
 $user = User::factory()
@@ -28987,7 +28962,7 @@ $user->getOriginal('name'); // John
 $user->getOriginal(); // Array of original attributes...
 ```
 
-The `getChanges` method returns an array containing the attributes that changed when the model was last saved:
+The `getChanges` method returns an array containing the attributes that changed when the model was last saved, while the `getPrevious` method returns an array containing the original attribute values before the model was last saved:
 
 ```php
 $user = User::find(1);
@@ -29006,6 +28981,15 @@ $user->getChanges();
     [
         'name' => 'Jack',
         'email' => 'jack@example.com',
+    ]
+*/
+
+$user->getPrevious();
+
+/*
+    [
+        'name' => 'John',
+        'email' => 'john@example.com',
     ]
 */
 ```
@@ -31070,7 +31054,7 @@ public function boot(): void
 <a name="queuable-anonymous-event-listeners"></a>
 #### Queueable Anonymous Event Listeners
 
-When registering closure based event listeners, you may wrap the listener closure within the `Illuminate\Events\queueable` function to instruct Laravel to execute the listener using the [queue](/docs/{{version}}/queues):
+When registering closure-based event listeners, you may wrap the listener closure within the `Illuminate\Events\queueable` function to instruct Laravel to execute the listener using the [queue](/docs/{{version}}/queues):
 
 ```php
 use App\Events\PodcastProcessed;
@@ -31445,6 +31429,8 @@ public function retryUntil(): DateTime
 }
 ```
 
+If both `retryUntil` and `tries` are defined, Laravel gives precedence to the `retryUntil` method.
+
 <a name="specifying-queued-listener-backoff"></a>
 #### Specifying Queued Listener Backoff
 
@@ -31776,7 +31762,9 @@ test('orders can be processed', function () {
     Event::assertDispatched(OrderCreated::class);
 
     // Other events are dispatched as normal...
-    $order->update([...]);
+    $order->update([
+        // ...
+    ]);
 });
 ```
 
@@ -31795,7 +31783,9 @@ public function test_orders_can_be_processed(): void
     Event::assertDispatched(OrderCreated::class);
 
     // Other events are dispatched as normal...
-    $order->update([...]);
+    $order->update([
+        // ...
+    ]);
 }
 ```
 
@@ -31828,8 +31818,10 @@ test('orders can be processed', function () {
         return $order;
     });
 
-    // Events are dispatched as normal and observers will run ...
-    $order->update([...]);
+    // Events are dispatched as normal and observers will run...
+    $order->update([
+        // ...
+    ]);
 });
 ```
 
@@ -31858,8 +31850,10 @@ class ExampleTest extends TestCase
             return $order;
         });
 
-        // Events are dispatched as normal and observers will run ...
-        $order->update([...]);
+        // Events are dispatched as normal and observers will run...
+        $order->update([
+            // ...
+        ]);
     }
 }
 ```
@@ -34919,9 +34913,9 @@ use Illuminate\Support\Arr;
 
 Arr::from((object) ['foo' => 'bar']); // ['foo' => 'bar']
 
-class TestJsonableObject implements Jsonable 
+class TestJsonableObject implements Jsonable
 {
-    public function toJson($options = 0) 
+    public function toJson($options = 0)
     {
         return json_encode(['foo' => 'bar']);
     }
@@ -37484,9 +37478,6 @@ For a thorough discussion of Carbon and its features, please consult the [offici
 <a name="deferred-functions"></a>
 ### Deferred Functions
 
-> [!WARNING]
-> Deferred functions are currently in beta while we gather community feedback.
-
 While Laravel's [queued jobs](/docs/{{version}}/queues) allow you to queue tasks for background processing, sometimes you may have simple tasks you would like to defer without configuring or maintaining a long-running queue worker.
 
 Deferred functions allow you to defer the execution of a closure until after the HTTP response has been sent to the user, keeping your application feeling fast and responsive. To defer the execution of a closure, simply pass the closure to the `Illuminate\Support\defer` function:
@@ -37521,19 +37512,6 @@ If you need to cancel a deferred function before it is executed, you can use the
 defer(fn () => Metrics::report(), 'reportMetrics');
 
 defer()->forget('reportMetrics');
-```
-
-<a name="deferred-function-compatibility"></a>
-#### Deferred Function Compatibility
-
-If you upgraded to Laravel 11.x from a Laravel 10.x application and your application's skeleton still contains an `app/Http/Kernel.php` file, you should add the `InvokeDeferredCallbacks` middleware to the beginning of the kernel's `$middleware` property:
-
-```php
-protected $middleware = [
-    \Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks::class, // [tl! add]
-    \App\Http\Middleware\TrustProxies::class,
-    // ...
-];
 ```
 
 <a name="disabling-deferred-functions-in-tests"></a>
@@ -41138,6 +41116,7 @@ Laravel's `Illuminate\Testing\TestResponse` class provides a variety of custom a
 
 [assertAccepted](#assert-accepted)
 [assertBadRequest](#assert-bad-request)
+[assertClientError](#assert-client-error)
 [assertConflict](#assert-conflict)
 [assertCookie](#assert-cookie)
 [assertCookieExpired](#assert-cookie-expired)
@@ -41214,6 +41193,15 @@ Laravel's `Illuminate\Testing\TestResponse` class provides a variety of custom a
 
 </div>
 
+<a name="assert-accepted"></a>
+#### assertAccepted
+
+Assert that the response has an accepted (202) HTTP status code:
+
+```php
+$response->assertAccepted();
+```
+
 <a name="assert-bad-request"></a>
 #### assertBadRequest
 
@@ -41223,13 +41211,13 @@ Assert that the response has a bad request (400) HTTP status code:
 $response->assertBadRequest();
 ```
 
-<a name="assert-accepted"></a>
-#### assertAccepted
+<a name="assert-client-error"></a>
+#### assertClientError
 
-Assert that the response has an accepted (202) HTTP status code:
+Assert that the response has a client error (>= 400, < 500) HTTP status code:
 
 ```php
-$response->assertAccepted();
+$response->assertClientError();
 ```
 
 <a name="assert-conflict"></a>
@@ -50720,6 +50708,7 @@ The JSON from the paginator will include meta information such as `total`, `curr
    "per_page": 15,
    "current_page": 1,
    "last_page": 4,
+   "current_page_url": "http://laravel.app?page=1",
    "first_page_url": "http://laravel.app?page=1",
    "last_page_url": "http://laravel.app?page=4",
    "next_page_url": "http://laravel.app?page=2",
@@ -52599,7 +52588,7 @@ For convenience, if a feature definition only returns a lottery, you may omit th
 <a name="class-based-features"></a>
 ### Class Based Features
 
-Pennant also allows you to define class based features. Unlike closure based feature definitions, there is no need to register a class based feature in a service provider. To create a class based feature, you may invoke the `pennant:feature` Artisan command. By default the feature class will be placed in your application's `app/Features` directory:
+Pennant also allows you to define class based features. Unlike closure-based feature definitions, there is no need to register a class based feature in a service provider. To create a class based feature, you may invoke the `pennant:feature` Artisan command. By default the feature class will be placed in your application's `app/Features` directory:
 
 ```shell
 php artisan pennant:feature NewApi
@@ -59770,6 +59759,23 @@ public function middleware(): array
 }
 ```
 
+Unlike the `when` method, which releases the job back onto the queue or throws an exception, the `deleteWhen` method allows you to delete the job entirely when a given exception occurs:
+
+```php
+use App\Exceptions\CustomerDeletedException;
+use Illuminate\Queue\Middleware\ThrottlesExceptions;
+
+/**
+ * Get the middleware the job should pass through.
+ *
+ * @return array<int, object>
+ */
+public function middleware(): array
+{
+    return [(new ThrottlesExceptions(2, 10 * 60))->deleteWhen(CustomerDeletedException::class)];
+}
+```
+
 If you would like to have the throttled exceptions reported to your application's exception handler, you can do so by invoking the `report` method when attaching the middleware to your job. Optionally, you may provide a closure to the `report` method and the exception will only be reported if the given closure returns `true`:
 
 ```php
@@ -60285,8 +60291,10 @@ public function retryUntil(): DateTime
 }
 ```
 
+If both `retryUntil` and `tries` are defined, Laravel gives precedence to the `retryUntil` method.
+
 > [!NOTE]
-> You may also define a `tries` property or `retryUntil` method on your [queued event listeners](/docs/{{version}}/events#queued-event-listeners).
+> You may also define a `tries` property or `retryUntil` method on your [queued event listeners](/docs/{{version}}/events#queued-event-listeners) and [queued notifications](/docs/{{version}}/notifications#queueing-notifications).
 
 <a name="max-exceptions"></a>
 #### Max Exceptions
@@ -62512,10 +62520,10 @@ For all Laravel releases, bug fixes are provided for 18 months and security fixe
 
 | Version | PHP (*) | Release | Bug Fixes Until | Security Fixes Until |
 | --- | --- | --- | --- | --- |
-| 9 | 8.0 - 8.2 | February 8th, 2022 | August 8th, 2023 | February 6th, 2024 |
 | 10 | 8.1 - 8.3 | February 14th, 2023 | August 6th, 2024 | February 4th, 2025 |
 | 11 | 8.2 - 8.4 | March 12th, 2024 | September 3rd, 2025 | March 12th, 2026 |
 | 12 | 8.2 - 8.4 | February 24th, 2025 | August 13th, 2026 | February 24th, 2027 |
+| 13 | 8.3 - 8.4 | Q1 2026 | Q3 2027 | Q1 2028 |
 
 </div>
 
@@ -62986,6 +62994,12 @@ use App\Enums\Status;
 $status = $request->enum('status', Status::class);
 ```
 
+You may also provide a default value that will be returned if the value is missing or invalid:
+
+```php
+$status = $request->enum('status', Status::class, Status::Pending);
+```
+
 If the input value is an array of values that correspond to a PHP enum, you may use the `enums` method to retrieve the array of values as enum instances:
 
 ```php
@@ -63418,7 +63432,11 @@ If you need to access your application's configuration files or database to dete
     - [JSON Responses](#json-responses)
     - [File Downloads](#file-downloads)
     - [File Responses](#file-responses)
-    - [Streamed Responses](#streamed-responses)
+- [Streamed Responses](#streamed-responses)
+    - [Consuming Streamed Responses](#consuming-streamed-responses)
+    - [Streamed JSON Responses](#streamed-json-responses)
+    - [Event Streams (SSE)](#event-streams)
+    - [Streamed Downloads](#streamed-downloads)
 - [Response Macros](#response-macros)
 
 <a name="creating-responses"></a>
@@ -63764,20 +63782,15 @@ return response()->file($pathToFile, $headers);
 ```
 
 <a name="streamed-responses"></a>
-### Streamed Responses
+## Streamed Responses
 
 By streaming data to the client as it is generated, you can significantly reduce memory usage and improve performance, especially for very large responses. Streamed responses allow the client to begin processing data before the server has finished sending it:
 
 ```php
-function streamedContent(): Generator {
-    yield 'Hello, ';
-    yield 'World!';
-}
-
 Route::get('/stream', function () {
     return response()->stream(function (): void {
-        foreach (streamedContent() as $chunk) {
-            echo $chunk;
+        foreach (['developer', 'admin'] as $string) {
+            echo $string;
             ob_flush();
             flush();
             sleep(2); // Simulate delay between chunks...
@@ -63786,11 +63799,262 @@ Route::get('/stream', function () {
 });
 ```
 
-> [!NOTE]
-> Internally, Laravel utilizes PHP's output buffering functionality. As you can see in the example above, you should use the `ob_flush` and `flush` functions to push buffered content to the client.
+For convenience, if the closure you provide to the `stream` method returns a [Generator](https://www.php.net/manual/en/language.generators.overview.php), Laravel will automatically flush the output buffer between strings returned by the generator, as well as disable Nginx output buffering:
+
+```php
+Route::get('/chat', function () {
+    return response()->stream(function (): void {
+        $stream = OpenAI::client()->chat()->createStreamed(...);
+
+        foreach ($stream as $response) {
+            yield $response->choices[0];
+        }
+    });
+});
+```
+
+<a name="consuming-streamed-responses"></a>
+### Consuming Streamed Responses
+
+Streamed responses may be consumed using Laravel's `stream` npm package, which provides a convenient API for interacting with Laravel response and event streams. To get started, install the `@laravel/stream-react` or `@laravel/stream-vue` package:
+
+```shell tab=React
+npm install @laravel/stream-react
+```
+
+```shell tab=Vue
+npm install @laravel/stream-vue
+```
+
+Then, `useStream` may be used to consume the event stream. After providing your stream URL, the hook will automatically update the `data` with the concatenated response as content is returned from your Laravel application:
+
+```tsx tab=React
+import { useStream } from "@laravel/stream-react";
+
+function App() {
+    const { data, isFetching, isStreaming, send } = useStream("chat");
+
+    const sendMessage = () => {
+        send({
+            message: `Current timestamp: ${Date.now()}`,
+        });
+    };
+
+    return (
+        <div>
+            <div>{data}</div>
+            {isFetching && <div>Connecting...</div>}
+            {isStreaming && <div>Generating...</div>}
+            <button onClick={sendMessage}>Send Message</button>
+        </div>
+    );
+}
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+
+const { data, isFetching, isStreaming, send } = useStream("chat");
+
+const sendMessage = () => {
+    send({
+        message: `Current timestamp: ${Date.now()}`,
+    });
+};
+</script>
+
+<template>
+    <div>
+        <div>{{ data }}</div>
+        <div v-if="isFetching">Connecting...</div>
+        <div v-if="isStreaming">Generating...</div>
+        <button @click="sendMessage">Send Message</button>
+    </div>
+</template>
+```
+
+When sending data back to the stream via `send`, the active connection to the stream is canceled before sending the new data. All requests are sent as JSON `POST` requests.
+
+The second argument given to `useStream` is an options object that you may use to customize the stream consumption behavior. The default values for this object are shown below:
+
+```tsx tab=React
+import { useStream } from "@laravel/stream-react";
+
+function App() {
+    const { data } = useStream("chat", {
+        id: undefined,
+        initialInput: undefined,
+        headers: undefined,
+        csrfToken: undefined,
+        onResponse: (response: Response) => void,
+        onData: (data: string) => void,
+        onCancel: () => void,
+        onFinish: () => void,
+        onError: (error: Error) => void,
+    });
+
+    return <div>{data}</div>;
+}
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+
+const { data } = useStream("chat", {
+    id: undefined,
+    initialInput: undefined,
+    headers: undefined,
+    csrfToken: undefined,
+    onResponse: (response: Response) => void,
+    onData: (data: string) => void,
+    onCancel: () => void,
+    onFinish: () => void,
+    onError: (error: Error) => void,
+});
+</script>
+
+<template>
+    <div>{{ data }}</div>
+</template>
+```
+
+`onResponse` is triggered after a successful initial response from the stream and the raw [Response](https://developer.mozilla.org/en-US/docs/Web/API/Response) is passed to the callback. `onData` is called as each chunk is received - the current chunk is passed to the callback. `onFinish` is called when a stream has finished and when an error is thrown during the fetch / read cycle.
+
+By default, a request is not made to the stream on initialization. You may pass an initial payload to the stream by using the `initialInput` option:
+
+```tsx tab=React
+import { useStream } from "@laravel/stream-react";
+
+function App() {
+    const { data } = useStream("chat", {
+        initialInput: {
+            message: "Introduce yourself.",
+        },
+    });
+
+    return <div>{data}</div>;
+}
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+
+const { data } = useStream("chat", {
+    initialInput: {
+        message: "Introduce yourself.",
+    },
+});
+</script>
+
+<template>
+    <div>{{ data }}</div>
+</template>
+```
+
+To cancel a stream manually, you may use the `cancel` method returned from the hook:
+
+```tsx tab=React
+import { useStream } from "@laravel/stream-react";
+
+function App() {
+    const { data, cancel } = useStream("chat");
+
+    return (
+        <div>
+            <div>{data}</div>
+            <button onClick={cancel}>Cancel</button>
+        </div>
+    );
+}
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+
+const { data, cancel } = useStream("chat");
+</script>
+
+<template>
+    <div>
+        <div>{{ data }}</div>
+        <button @click="cancel">Cancel</button>
+    </div>
+</template>
+```
+
+Each time the `useStream` hook is used, a random `id` is generated to identify the stream. This is sent back to the server with each request in the `X-STREAM-ID` header. When consuming the same stream from multiple components, you can read and write to the stream by providing your own `id`:
+
+```tsx tab=React
+// App.tsx
+import { useStream } from "@laravel/stream-react";
+
+function App() {
+    const { data, id } = useStream("chat");
+
+    return (
+        <div>
+            <div>{data}</div>
+            <StreamStatus id={id} />
+        </div>
+    );
+}
+
+// StreamStatus.tsx
+import { useStream } from "@laravel/stream-react";
+
+function StreamStatus({ id }) {
+    const { isFetching, isStreaming } = useStream("chat", { id });
+
+    return (
+        <div>
+            {isFetching && <div>Connecting...</div>}
+            {isStreaming && <div>Generating...</div>}
+        </div>
+    );
+}
+```
+
+```vue tab=Vue
+<!-- App.vue -->
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+import StreamStatus from "./StreamStatus.vue";
+
+const { data, id } = useStream("chat");
+</script>
+
+<template>
+    <div>
+        <div>{{ data }}</div>
+        <StreamStatus :id="id" />
+    </div>
+</template>
+
+<!-- StreamStatus.vue -->
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+
+const props = defineProps<{
+    id: string;
+}>();
+
+const { isFetching, isStreaming } = useStream("chat", { id: props.id });
+</script>
+
+<template>
+    <div>
+        <div v-if="isFetching">Connecting...</div>
+        <div v-if="isStreaming">Generating...</div>
+    </div>
+</template>
+```
 
 <a name="streamed-json-responses"></a>
-#### Streamed JSON Responses
+### Streamed JSON Responses
 
 If you need to stream JSON data incrementally, you may utilize the `streamJson` method. This method is especially useful for large datasets that need to be sent progressively to the browser in a format that can be easily parsed by JavaScript:
 
@@ -63804,8 +64068,74 @@ Route::get('/users.json', function () {
 });
 ```
 
+The `useJsonStream` hook is identical to the [`useStream` hook](#consuming-streamed-responses) except that it will attempt to parse the data as JSON once it has finished streaming:
+
+```tsx tab=React
+import { useJsonStream } from "@laravel/stream-react";
+
+type User = {
+    id: number;
+    name: string;
+    email: string;
+};
+
+function App() {
+    const { data, send } = useJsonStream<{ users: User[] }>("users");
+
+    const loadUsers = () => {
+        send({
+            query: "taylor",
+        });
+    };
+
+    return (
+        <div>
+            <ul>
+                {data?.users.map((user) => (
+                    <li>
+                        {user.id}: {user.name}
+                    </li>
+                ))}
+            </ul>
+            <button onClick={loadUsers}>Load Users</button>
+        </div>
+    );
+}
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useJsonStream } from "@laravel/stream-vue";
+
+type User = {
+    id: number;
+    name: string;
+    email: string;
+};
+
+const { data, send } = useJsonStream<{ users: User[] }>("users");
+
+const loadUsers = () => {
+    send({
+        query: "taylor",
+    });
+};
+</script>
+
+<template>
+    <div>
+        <ul>
+            <li v-for="user in data?.users" :key="user.id">
+                {{ user.id }}: {{ user.name }}
+            </li>
+        </ul>
+        <button @click="loadUsers">Load Users</button>
+    </div>
+</template>
+```
+
 <a name="event-streams"></a>
-#### Event Streams
+### Event Streams (SSE)
 
 The `eventStream` method may be used to return a server-sent events (SSE) streamed response using the `text/event-stream` content type. The `eventStream` method accepts a closure which should [yield](https://www.php.net/manual/en/language.generators.overview.php) responses to the stream as the responses become available:
 
@@ -63831,6 +64161,9 @@ yield new StreamedEvent(
     data: $response->choices[0],
 );
 ```
+
+<a name="consuming-event-streams"></a>
+#### Consuming Event Streams
 
 Event streams may be consumed using Laravel's `stream` npm package, which provides a convenient API for interacting with Laravel event streams. To get started, install the `@laravel/stream-react` or `@laravel/stream-vue` package:
 
@@ -63937,7 +64270,7 @@ return response()->eventStream(function () {
 ```
 
 <a name="streamed-downloads"></a>
-#### Streamed Downloads
+### Streamed Downloads
 
 Sometimes you may wish to turn the string response of a given operation into a downloadable response without having to write the contents of the operation to disk. You may use the `streamDownload` method in this scenario. This method accepts a callback, filename, and an optional array of headers as its arguments:
 
@@ -65813,7 +66146,7 @@ sail up
 <a name="sail-node-versions"></a>
 ## Node Versions
 
-Sail installs Node 20 by default. To change the Node version that is installed when building your images, you may update the `build.args` definition of the `laravel.test` service in your application's `docker-compose.yml` file:
+Sail installs Node 22 by default. To change the Node version that is installed when building your images, you may update the `build.args` definition of the `laravel.test` service in your application's `docker-compose.yml` file:
 
 ```yaml
 build:
@@ -72958,7 +73291,7 @@ The `routes` directory contains all of the route definitions for your applicatio
 
 The `web.php` file contains routes that Laravel places in the `web` middleware group, which provides session state, CSRF protection, and cookie encryption. If your application does not offer a stateless, RESTful API then all your routes will most likely be defined in the `web.php` file.
 
-The `console.php` file is where you may define all of your closure based console commands. Each closure is bound to a command instance allowing a simple approach to interacting with each command's IO methods. Even though this file does not define HTTP routes, it defines console based entry points (routes) into your application. You may also [schedule](/docs/{{version}}/scheduling) tasks in the `console.php` file.
+The `console.php` file is where you may define all of your closure-based console commands. Each closure is bound to a command instance allowing a simple approach to interacting with each command's IO methods. Even though this file does not define HTTP routes, it defines console based entry points (routes) into your application. You may also [schedule](/docs/{{version}}/scheduling) tasks in the `console.php` file.
 
 Optionally, you may install additional route files for API routes (`api.php`) and broadcasting channels (`channels.php`), via the `install:api` and `install:broadcasting` Artisan commands.
 
@@ -78227,7 +78560,7 @@ class AppServiceProvider extends ServiceProvider
         // Using class based composers...
         Facades\View::composer('profile', ProfileComposer::class);
 
-        // Using closure based composers...
+        // Using closure-based composers...
         Facades\View::composer('welcome', function (View $view) {
             // ...
         });
