@@ -4,47 +4,49 @@ import requests
 from pathlib import Path
 import time
 
-def get_api_urls_from_knowledge_file(knowledge_file_path_str: str) -> list[str]:
-    """Reads API URLs from a .knowledge file.
+from dotenv import load_dotenv
+load_dotenv()
+
+def get_api_urls_from_knowledge_file(knowledge_file_path_str: str) -> tuple[list[str], set[str]]:
+    """Reads API URLs and ignored download URLs from a .knowledge file.
 
     Args:
         knowledge_file_path_str: The path to the .knowledge file.
 
     Returns:
-        A list of API URLs. Returns an empty list if the file is not found,
-        cannot be read, or contains no valid URLs.
+        (list of API URLs, set of ignored download URLs)
     """
     urls = []
+    ignored_download_urls = set()
     try:
         knowledge_file_path = Path(knowledge_file_path_str)
         if not knowledge_file_path.is_file():
             print(f"Error: Knowledge file not found: {knowledge_file_path_str}")
-            return []
+            return [], set()
         
         with open(knowledge_file_path, 'r', encoding='utf-8') as f:
             for line_num, line in enumerate(f, 1):
                 url = line.strip()
-                if not url or url.startswith('#'): # Skip empty lines and comments
+                if not url or url.startswith('#'):
                     continue
-                
+                if url.startswith('!'):
+                    ignored_download_urls.add(url[1:])
+                    continue
                 if not url.startswith("https://api.github.com/repos/"):
                     print(f"Warning: The URL on line {line_num} in {knowledge_file_path_str} does not look like a GitHub API contents URL: {url}")
-                    # We'll still add it, but the user should be aware.
                 urls.append(url)
-        
         if not urls:
             print(f"Warning: No valid URLs found in {knowledge_file_path_str}")
-            
-        return urls
+        return urls, ignored_download_urls
     except Exception as e:
         print(f"Error reading knowledge file {knowledge_file_path_str}: {e}")
-        return []
+        return [], set()
 
 MAX_RETRIES = 3
 RETRY_DELAY_SECONDS = 5 # Initial delay, can be increased
 REQUEST_TIMEOUT_SECONDS = 15 # Timeout for requests
 
-def crawl_github_docs(api_url: str, output_file_handle, headers: dict, depth: int = 0):
+def crawl_github_docs(api_url: str, output_file_handle, headers: dict, depth: int = 0, ignored_download_urls: set[str] = None):
     """Recursively crawls GitHub API for markdown files and appends their content.
 
     Args:
@@ -52,7 +54,10 @@ def crawl_github_docs(api_url: str, output_file_handle, headers: dict, depth: in
         output_file_handle: File handle for the output markdown file.
         headers: Headers for the API request (may include auth).
         depth: Current recursion depth (for logging/debugging).
+        ignored_download_urls: Set of download URLs to skip.
     """
+    if ignored_download_urls is None:
+        ignored_download_urls = set()
     indent = "  " * depth
     print(f"{indent}Crawling API URL ({depth=}): {api_url}")
 
@@ -87,6 +92,9 @@ def crawl_github_docs(api_url: str, output_file_handle, headers: dict, depth: in
                     if not download_url:
                         print(f"{indent}    Warning: No download_url found for file: {item_path}")
                         continue
+                    if download_url in ignored_download_urls:
+                        print(f"{indent}    Skipping {item_path} (download_url is ignored by .knowledge)")
+                        continue
                     
                     try:
                         file_content_response = requests.get(download_url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS)
@@ -109,7 +117,7 @@ def crawl_github_docs(api_url: str, output_file_handle, headers: dict, depth: in
                     if not dir_api_url:
                         print(f"{indent}    Warning: No API URL found for directory: {item_path}")
                         continue
-                    crawl_github_docs(dir_api_url, output_file_handle, headers, depth + 1)
+                    crawl_github_docs(dir_api_url, output_file_handle, headers, depth + 1, ignored_download_urls)
             
             return # Success, exit retry loop
 
@@ -189,7 +197,7 @@ def main():
 
     for knowledge_file_path_str in KNOWLEDGE_FILES:
         print(f"\nProcessing knowledge file: {knowledge_file_path_str}")
-        start_api_urls = get_api_urls_from_knowledge_file(knowledge_file_path_str)
+        start_api_urls, ignored_download_urls = get_api_urls_from_knowledge_file(knowledge_file_path_str)
 
         if not start_api_urls:
             print(f"Skipping {knowledge_file_path_str} due to no valid URLs found or error reading file.")
@@ -223,7 +231,7 @@ def main():
                 output_file_handle.write(f"<!-- GitHub API Roots: {', '.join(start_api_urls)} -->\n\n")
                 for start_api_url in start_api_urls:
                     print(f"\n--- Starting crawl for API URL: {start_api_url} ---")
-                    crawl_github_docs(start_api_url, output_file_handle, headers)
+                    crawl_github_docs(start_api_url, output_file_handle, headers, depth=0, ignored_download_urls=ignored_download_urls)
                     print(f"--- Finished crawl for API URL: {start_api_url} ---")
 
             print(f"Successfully processed {doc_name}. Output at {output_md_path.resolve()}")

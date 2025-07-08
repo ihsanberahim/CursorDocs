@@ -1,1 +1,5 @@
 https://api.github.com/repos/n8n-io/n8n-docs/contents/docs
+!https://api.github.com/repos/n8n-io/n8n-docs/contents/docs/_extra
+!https://api.github.com/repos/n8n-io/n8n-docs/contents/docs/_images
+!https://api.github.com/repos/n8n-io/n8n-docs/contents/docs/_includes/integrations/cluster-nodes
+!https://api.github.com/repos/n8n-io/n8n-docs/contents/docs/_video
