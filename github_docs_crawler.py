@@ -165,7 +165,8 @@ def main():
         # "laravel/.knowledge",
         # "filamentphp/.knowledge",
         # "livewire/.knowledge",
-        "editorjs/.knowledge"
+        # "editorjs/.knowledge",
+        "n8n/.knowledge"
     ]  # TODO: Make this dynamic or configurable
     GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
