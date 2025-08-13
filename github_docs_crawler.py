@@ -71,7 +71,7 @@ def crawl_github_docs(api_url: str, output_file_handle, headers: dict, depth: in
                 # If the API URL points directly to a file, it returns a dict, not a list.
                 # We should ideally handle this if a .knowledge file could point to a single .md file API URL.
                 # For now, assuming .knowledge points to a directory listing API URL.
-                if isinstance(items, dict) and items.get('type') == 'file' and items.get('name', '').endswith('.md'):
+                if isinstance(items, dict) and items.get('type') == 'file' and (items.get('name', '').endswith('.md') or items.get('name', '').endswith('.mdx')):
                     # This means the initial api_url was for a single file.
                     items = [items] # Treat as a list with one item
                 else:
@@ -86,7 +86,7 @@ def crawl_github_docs(api_url: str, output_file_handle, headers: dict, depth: in
                 item_type = item.get('type', '[Unknown Type]')
                 item_path = item.get('path', '[Unknown Path]') # Full path in repo
 
-                if item_type == 'file' and item_name.endswith('.md'):
+                if item_type == 'file' and item_name.endswith('.md') or item_name.endswith('.mdx'):
                     print(f"{indent}  - Found Markdown file: {item_path}")
                     download_url = item.get('download_url')
                     if not download_url:
@@ -176,7 +176,8 @@ def main():
         # "editorjs/.knowledge",
         # "n8n/.knowledge",
         # "adk/.knowledge",
-        "filamentphpV4/.knowledge",
+        # "filamentphpV4/.knowledge",
+        "tailwindcssV4/.knowledge",
     ]  # TODO: Make this dynamic or configurable
     GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
