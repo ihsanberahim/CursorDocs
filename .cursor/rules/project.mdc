@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+## Commands
+- `source venv/bin/activate` in `@/`
+* before run any python command

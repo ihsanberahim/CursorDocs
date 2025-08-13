@@ -12,6 +12,13 @@ except ImportError:
     MARKDOWNIFY_AVAILABLE = False
     # We'll print a warning in main if it's needed and not available
 
+try:
+    from bs4 import BeautifulSoup
+    BEAUTIFULSOUP_AVAILABLE = True
+except ImportError:
+    BEAUTIFULSOUP_AVAILABLE = False
+    # We'll print a warning in main if it's needed and not available
+
 # --- Configuration Constants ---
 REQUEST_TIMEOUT_SECONDS = 20  # Increased timeout for potentially larger pages
 RETRY_DELAY_SECONDS = 10    # Initial delay for retries
@@ -185,6 +192,43 @@ def fetch_page_html(page_url: str, headers: dict) -> str | None:
             time.sleep(RETRY_DELAY_SECONDS * (attempt + 1))
     return None
 
+def extract_content_by_css_selector(html_content: str, css_selector: str, page_url: str) -> str | None:
+    """Extracts content from HTML based on CSS selector using BeautifulSoup.
+
+    Args:
+        html_content: The HTML content string.
+        css_selector: The CSS selector to find the target content.
+        page_url: The source URL (for logging).
+
+    Returns:
+        The extracted HTML content as a string, or None if extraction fails.
+    """
+    if not BEAUTIFULSOUP_AVAILABLE:
+        print("Error: BeautifulSoup library is not available for CSS selector extraction.")
+        return None
+    
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        selected_elements = soup.select(css_selector)
+        
+        if not selected_elements:
+            print(f"    Warning: No elements found with CSS selector '{css_selector}' on {page_url}")
+            return None
+        
+        if len(selected_elements) > 1:
+            print(f"    Found {len(selected_elements)} elements with CSS selector '{css_selector}' on {page_url}, using all")
+            # Combine all matching elements
+            extracted_content = ''.join(str(element) for element in selected_elements)
+        else:
+            extracted_content = str(selected_elements[0])
+        
+        print(f"    Successfully extracted content using CSS selector '{css_selector}' from {page_url}")
+        return extracted_content
+        
+    except Exception as e:
+        print(f"    Error extracting content with CSS selector '{css_selector}' from {page_url}: {e}")
+        return None
+
 def convert_html_to_markdown(html_content: str, page_url: str) -> str | None:
     """Converts HTML content to Markdown using markdownify.
 
@@ -209,36 +253,51 @@ def convert_html_to_markdown(html_content: str, page_url: str) -> str | None:
         print(f"    Error converting HTML from {page_url} to Markdown: {e}")
         return None
 
-def get_sitemap_url_from_knowledge_file(knowledge_file_path_str: str) -> str | None:
-    """Reads the sitemap URL from the first line of a .knowledge file.
+def get_sitemap_url_from_knowledge_file(knowledge_file_path_str: str) -> tuple[str | None, str | None]:
+    """Reads the sitemap URL and optional CSS selector from the first line of a .knowledge file.
 
     Args:
         knowledge_file_path_str: The path to the .knowledge file.
 
     Returns:
-        The sitemap URL as a string, or None if an error occurs.
+        A tuple of (sitemap_url, css_selector) where both can be None if an error occurs.
+        If no CSS selector is specified, css_selector will be None.
     """
     try:
         knowledge_file_path = Path(knowledge_file_path_str)
         if not knowledge_file_path.is_file():
             print(f"Error: Knowledge file not found: {knowledge_file_path_str}")
-            return None
+            return None, None
         
         with open(knowledge_file_path, 'r', encoding='utf-8') as f:
-            url = f.readline().strip()
+            url_line = f.readline().strip()
         
-        if not url:
+        if not url_line:
             print(f"Error: Knowledge file is empty or first line is blank: {knowledge_file_path_str}")
-            return None
+            return None, None
+        
+        # Parse URL and CSS selector
+        css_selector = None
+        sitemap_url = url_line
+        
+        # Check if there's a CSS selector in the URL (after #)
+        if '#' in url_line:
+            url_parts = url_line.split('#', 1)
+            sitemap_url = url_parts[0]
+            css_selector = url_parts[1] if len(url_parts) > 1 else None
+            
+            if css_selector:
+                print(f"Found CSS selector: '{css_selector}' for focused content extraction")
+        
         # Basic check for a URL, can be made more sophisticated
-        if not (url.startswith("http://") or url.startswith("https://")):
-            print(f"Warning: The URL in {knowledge_file_path_str} does not look like a valid HTTP/S URL: {url}")
+        if not (sitemap_url.startswith("http://") or sitemap_url.startswith("https://")):
+            print(f"Warning: The URL in {knowledge_file_path_str} does not look like a valid HTTP/S URL: {sitemap_url}")
             # We'll still return it, but the user should be aware.
 
-        return url
+        return sitemap_url, css_selector
     except Exception as e:
         print(f"Error reading knowledge file {knowledge_file_path_str}: {e}")
-        return None
+        return None, None
 
 def main():
     """
@@ -249,8 +308,15 @@ def main():
         print("Please install it by running: pip install markdownify")
         print("Exiting script.")
         return
+    
+    if not BEAUTIFULSOUP_AVAILABLE:
+        print("Warning: The 'beautifulsoup4' library is not installed. ")
+        print("CSS selector functionality will not be available.")
+        print("Please install it by running: pip install beautifulsoup4")
+        print("Continuing without CSS selector support...")
 
     KNOWLEDGE_FILES = [
+        "droip/.knowledge",
         "flutter/.knowledge",
         # Add other sitemap-based .knowledge files here, e.g.:
         # "some_other_docs/.knowledge"
@@ -264,7 +330,7 @@ def main():
 
     for knowledge_file_path_str in KNOWLEDGE_FILES:
         print(f"\nProcessing knowledge file: {knowledge_file_path_str}")
-        sitemap_start_url = get_sitemap_url_from_knowledge_file(knowledge_file_path_str)
+        sitemap_start_url, css_selector = get_sitemap_url_from_knowledge_file(knowledge_file_path_str)
 
         if not sitemap_start_url:
             print(f"Skipping {knowledge_file_path_str} due to missing or invalid sitemap URL.")
@@ -286,6 +352,8 @@ def main():
 
         print(f"Processing documentation for: '{doc_name}'")
         print(f"Sitemap URL: {sitemap_start_url}")
+        if css_selector:
+            print(f"CSS Selector: {css_selector}")
         print(f"Output will be saved to: {output_md_path.resolve()}")
 
         all_page_urls = fetch_and_parse_sitemap(sitemap_start_url, headers)
@@ -300,7 +368,10 @@ def main():
             with open(output_md_path, 'w', encoding='utf-8') as output_file_handle:
                 output_file_handle.write(f"# Combined Documentation for {doc_name} (from Sitemap)\n")
                 output_file_handle.write(f"<!-- Source .knowledge file: {knowledge_file_path_str} -->\n")
-                output_file_handle.write(f"<!-- Source Sitemap URL: {sitemap_start_url} -->\n\n")
+                output_file_handle.write(f"<!-- Source Sitemap URL: {sitemap_start_url} -->\n")
+                if css_selector:
+                    output_file_handle.write(f"<!-- CSS Selector: {css_selector} -->\n")
+                output_file_handle.write("\n")
                 
                 processed_count = 0
                 for i, page_url in enumerate(all_page_urls):
@@ -308,6 +379,15 @@ def main():
                     html_content = fetch_page_html(page_url, headers)
                     
                     if html_content:
+                        # Apply CSS selector if specified
+                        if css_selector:
+                            extracted_html = extract_content_by_css_selector(html_content, css_selector, page_url)
+                            if extracted_html:
+                                html_content = extracted_html
+                            else:
+                                print(f"    Skipping {page_url} due to CSS selector extraction failure.")
+                                continue
+                        
                         markdown_content = convert_html_to_markdown(html_content, page_url)
                         if markdown_content:
                             try:
