@@ -253,30 +253,33 @@ def convert_html_to_markdown(html_content: str, page_url: str) -> str | None:
         print(f"    Error converting HTML from {page_url} to Markdown: {e}")
         return None
 
-def get_sitemap_url_from_knowledge_file(knowledge_file_path_str: str) -> tuple[str | None, str | None]:
-    """Reads the sitemap URL and optional CSS selector from the first line of a .knowledge file.
+def get_sitemap_url_from_knowledge_file(knowledge_file_path_str: str) -> tuple[str | None, str | None, list[str]]:
+    """Reads the sitemap URL, optional CSS selector, and skip patterns from a .knowledge file.
 
     Args:
         knowledge_file_path_str: The path to the .knowledge file.
 
     Returns:
-        A tuple of (sitemap_url, css_selector) where both can be None if an error occurs.
-        If no CSS selector is specified, css_selector will be None.
+        A tuple of (sitemap_url, css_selector, skip_patterns) where:
+        - sitemap_url can be None if an error occurs
+        - css_selector can be None if no CSS selector is specified
+        - skip_patterns is a list of URL patterns to skip (lines starting with '!')
     """
     try:
         knowledge_file_path = Path(knowledge_file_path_str)
         if not knowledge_file_path.is_file():
             print(f"Error: Knowledge file not found: {knowledge_file_path_str}")
-            return None, None
+            return None, None, []
         
         with open(knowledge_file_path, 'r', encoding='utf-8') as f:
-            url_line = f.readline().strip()
+            lines = [line.strip() for line in f.readlines() if line.strip()]
         
-        if not url_line:
-            print(f"Error: Knowledge file is empty or first line is blank: {knowledge_file_path_str}")
-            return None, None
+        if not lines:
+            print(f"Error: Knowledge file is empty: {knowledge_file_path_str}")
+            return None, None, []
         
-        # Parse URL and CSS selector
+        # Parse first line for sitemap URL and CSS selector
+        url_line = lines[0]
         css_selector = None
         sitemap_url = url_line
         
@@ -289,15 +292,57 @@ def get_sitemap_url_from_knowledge_file(knowledge_file_path_str: str) -> tuple[s
             if css_selector:
                 print(f"Found CSS selector: '{css_selector}' for focused content extraction")
         
+        # Parse skip patterns (lines starting with '!')
+        skip_patterns = []
+        for line in lines[1:]:  # Skip the first line (sitemap URL)
+            if line.startswith('!'):
+                skip_pattern = line[1:].strip()  # Remove the '!' prefix
+                if skip_pattern:
+                    skip_patterns.append(skip_pattern)
+                    print(f"Found skip pattern: '{skip_pattern}'")
+        
         # Basic check for a URL, can be made more sophisticated
         if not (sitemap_url.startswith("http://") or sitemap_url.startswith("https://")):
             print(f"Warning: The URL in {knowledge_file_path_str} does not look like a valid HTTP/S URL: {sitemap_url}")
             # We'll still return it, but the user should be aware.
 
-        return sitemap_url, css_selector
+        return sitemap_url, css_selector, skip_patterns
     except Exception as e:
         print(f"Error reading knowledge file {knowledge_file_path_str}: {e}")
-        return None, None
+        return None, None, []
+
+def filter_urls_by_skip_patterns(urls: list[str], skip_patterns: list[str]) -> list[str]:
+    """Filters out URLs that contain any of the skip patterns.
+    
+    Args:
+        urls: List of URLs to filter
+        skip_patterns: List of patterns to skip (URLs containing these will be filtered out)
+        
+    Returns:
+        List of URLs that don't contain any skip patterns
+    """
+    if not skip_patterns:
+        return urls
+    
+    filtered_urls = []
+    skipped_count = 0
+    
+    for url in urls:
+        should_skip = False
+        for pattern in skip_patterns:
+            if pattern in url:
+                print(f"    Skipping URL '{url}' (contains skip pattern: '{pattern}')")
+                should_skip = True
+                skipped_count += 1
+                break
+        
+        if not should_skip:
+            filtered_urls.append(url)
+    
+    if skipped_count > 0:
+        print(f"    Filtered out {skipped_count} URLs due to skip patterns")
+    
+    return filtered_urls
 
 def main():
     """
@@ -316,7 +361,7 @@ def main():
         print("Continuing without CSS selector support...")
 
     KNOWLEDGE_FILES = [
-        "droip/.knowledge",
+        # "droip/.knowledge",
         "flutter/.knowledge",
         # Add other sitemap-based .knowledge files here, e.g.:
         # "some_other_docs/.knowledge"
@@ -330,7 +375,7 @@ def main():
 
     for knowledge_file_path_str in KNOWLEDGE_FILES:
         print(f"\nProcessing knowledge file: {knowledge_file_path_str}")
-        sitemap_start_url, css_selector = get_sitemap_url_from_knowledge_file(knowledge_file_path_str)
+        sitemap_start_url, css_selector, skip_patterns = get_sitemap_url_from_knowledge_file(knowledge_file_path_str)
 
         if not sitemap_start_url:
             print(f"Skipping {knowledge_file_path_str} due to missing or invalid sitemap URL.")
@@ -354,6 +399,8 @@ def main():
         print(f"Sitemap URL: {sitemap_start_url}")
         if css_selector:
             print(f"CSS Selector: {css_selector}")
+        if skip_patterns:
+            print(f"Skip patterns: {skip_patterns}")
         print(f"Output will be saved to: {output_md_path.resolve()}")
 
         all_page_urls = fetch_and_parse_sitemap(sitemap_start_url, headers)
@@ -363,6 +410,17 @@ def main():
             continue
         
         print(f"Found {len(all_page_urls)} unique page URLs in sitemap for {doc_name}.")
+        
+        # Apply skip pattern filtering
+        if skip_patterns:
+            print(f"Applying skip pattern filtering...")
+            original_count = len(all_page_urls)
+            all_page_urls = filter_urls_by_skip_patterns(all_page_urls, skip_patterns)
+            print(f"After filtering: {len(all_page_urls)} URLs remaining (filtered out {original_count - len(all_page_urls)} URLs)")
+        
+        if not all_page_urls:
+            print(f"No URLs remaining after filtering for {doc_name}. Skipping.")
+            continue
 
         try:
             with open(output_md_path, 'w', encoding='utf-8') as output_file_handle:
